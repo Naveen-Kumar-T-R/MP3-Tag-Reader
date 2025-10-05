@@ -1,0 +1,74 @@
+/* Name : NAVEEN KUMAR T R
+   Date : 26/09/2025
+   Description : An MP3 Tag Reader is a software tool or program designed to read and display metadata (tags) embedded in MP3 audio files. 
+   These tags are typically stored using the ID3 standard (ID3v2.3)
+
+   They contain information such as:
+
+   Title – Name of the song
+   Artist – Performer of the track
+   Album – Album name the song belongs to
+   Year – Year of release
+   Genre – Music genre
+   Comments – Additional notes or information
+   
+   sample input :
+
+   View syntax: 
+        ./a.out -v <file_name.mp3>
+   Edit syntax:
+        ./a.out -e <file_name.mp3> modifier <new_data>
+   Modifiers:
+        -t -> Title
+        -a -> Artist
+        -A -> Album
+        -y -> Year
+        -cm -> Content
+        -cn -> Gener
+
+*/
+
+#include<stdio.h>
+#include<string.h>
+#include "view.h"
+#include "edit.h"
+
+void help_arg(char **);//help funcation declaration.
+
+int main(int argc, char *argv[])
+{
+    if(argc < 2)
+    {
+        printf("Error: Invalid argument\n");
+        printf("Hints: ./a.out operation(-v or -e or --h) file_name\n");
+        return 1;
+    }
+    if(strcmp(argv[1], "-v") == 0)//view operation.
+    {
+        read_validate_view_arg(argv);//function call to view
+
+    }
+    else if(strcmp(argv[1], "-e") == 0)//edit operation.
+    {
+        if(argc < 5)
+        {
+            printf("Error: Invalid argument\n");
+            printf("\t./a.out -e <file_name.mp3> modifier <new_data>\n");
+            return 1;
+        }
+        edit_arg(argv);//function call to edit
+
+    }
+    else if(strcmp(argv[1], "--h") == 0)//help operation.
+    {
+        help_arg(argv);//function call to help
+    }
+    else
+    {
+        printf("Error: Invalid argument\n");
+        printf("Hints: ./a.out operation(-v or -e or --h) file_name");
+    }
+
+    return 0;
+
+}
