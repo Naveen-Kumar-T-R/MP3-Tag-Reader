@@ -1,0 +1,194 @@
+/* Name : NAVEEN KUMAR T R
+   Date : 26/09/2025*/
+   
+#include<stdio.h>
+#include<string.h>
+#include "edit.h"
+
+//edit function definition.
+void edit_arg(char *argv[])
+{
+    FILE *fptr = fopen(argv[2], "r");// Open the original MP3 file in read mode
+
+    char m_tag[5];
+    check_tag(argv[3], m_tag);//function call to check the tag
+    FILE *fptr_mody = fopen("modify.mp3", "w");// Open a new file (temporary) in write+read mode to store modified content
+    // Check if original file couldn't be opened
+    if(fptr == NULL)
+    {
+        printf("Error : Could not open the file.\n");//printing error message if file is not opening
+        return ;
+    }
+    if(fptr_mody == NULL)
+    {
+        printf("Error : Could not open the file.\n");//printing error message if file is not opening
+        return ;
+    }
+
+    char sig[4];
+    fread(sig, 1, 3, fptr);// Read the first 3 bytes to check for ID3 tag (MP3 header)
+    sig[3] = '\0';
+
+    int new_s = strlen(argv[4]) + 1; // Get length of new data string
+    char char_new[new_s];
+    strcpy(char_new, argv[4]);//copying the new string
+
+    // Check if the file starts with "ID3", indicating valid MP3 metadata
+    if(strcmp(sig, "ID3") == 0)
+    {
+        rewind(fptr);// Reset file pointer to start of the file.
+
+        char str[11];
+        fread(str, 1, 10, fptr);// Read the 10-byte ID3 header.
+        str[10] = '\0';
+        fwrite(str, 1, 10, fptr_mody); // Write the same header to the new file.
+
+        // Determine the tag to edit based on user input (e.g., -t = TIT2)
+
+        int i = 0;
+
+        // Loop through first 6 tags in the MP3 file.
+        while(i < 6)
+        {
+            char tag[5];
+            fread(tag, 1, 4, fptr);// Read 4-byte frame ID (e.g., TIT2, TPE1).
+            tag[4] = '\0';
+
+            // Check if tag is one of the expected types.
+            if(strcmp(tag, "TIT2") != 0 && strcmp(tag, "TPE1") != 0 && strcmp(tag, "TALB") != 0 && strcmp(tag, "TYER") != 0 && strcmp(tag, "TCON") != 0 && strcmp(tag, "COMM") != 0)
+            {
+                printf("tag is not matching\n");
+                break;
+            }
+
+            int size = 0;
+            fread(&size, 1, 4, fptr);// Read 4-byte size
+
+            // Convert size from big endian to little endian
+            char *ch = (char *)&size;
+            for(int j = 0; j < sizeof(int)/2; j++)
+            {
+                char temp = *(ch+j);
+                *(ch+j) = *(ch+4-j-1);
+                *(ch+4-j-1) = temp;
+            }
+
+            char flag[4];
+            fread(flag, 1, 3, fptr);// Read 3-byte frame flag.
+            flag[3] = '\0';
+
+            char data[size];
+            fread(data, 1, size-1, fptr);//reading data of string
+            data[size-1] = '\0';
+
+            // If current tag matches the one to be edited.
+            if(strcmp(tag, m_tag) == 0)//
+            {
+                fwrite(tag, 1, 4, fptr_mody);// Write tag.
+
+                int temp_size = new_s;
+                // Convert new size to big endian
+                char *c = (char *)&new_s;
+                for(int k = 0; k < sizeof(int)/2; k++)
+                {
+                    char temp = *(c+k);
+                    *(c+k) = *(c+4-k-1);
+                    *(c+4-k-1) = temp;
+                }
+
+                // Write new size, flag and updated data value.
+                fwrite(&new_s, 1, 4, fptr_mody);
+                fwrite(flag, 1, 3, fptr_mody);
+
+                fwrite(char_new, 1, temp_size-1, fptr_mody);
+
+                break;// Exit loop after updating the desired tag
+            }
+            else
+            {
+                // If not the target tag, copy it as-is to the new file
+                fwrite(tag, 1, 4, fptr_mody);
+
+                int temp_size2 = size;
+                // Convert size back to big endian before writing
+                char *c = (char *)&size;
+                for(int k = 0; k < sizeof(int)/2; k++)
+                {
+                    char temp = *(c+k);
+                    *(c+k) = *(c+4-k-1);
+                    *(c+4-k-1) = temp;
+                }
+
+                fwrite(&size, 1, 4, fptr_mody);
+
+                fwrite(flag, 1, 3, fptr_mody);
+
+                fwrite(data, 1, temp_size2-1, fptr_mody);
+
+            }
+
+            i++;// Process next tag.
+
+        }
+
+        int res = 100; char song_data[101];
+
+        // Copy remaining song data (audio frames) in 100-byte chunks.
+
+        while(res == 100)
+        {
+            res = fread(song_data, 1, 100, fptr);
+            fwrite(song_data, res, 1, fptr_mody);
+        }
+        // Close both files.
+        fclose(fptr);
+        fclose(fptr_mody);
+
+        // Remove original file and rename the modified file.
+        remove(argv[2]);
+        rename("modify.mp3", argv[2]);
+
+        printf("Edited Successfully\n");
+    }
+    else
+    {
+        // If not an MP3 file with ID3 header.
+        printf("Only mp3 file is accepted.\n");
+
+        return ;
+    }
+}
+
+// This function maps command-line tag options to ID3 tag names.
+void check_tag(char *ch, char *tag)
+{
+    if(strcmp(ch, "-t") == 0)
+    {
+        strcpy(tag, "TIT2");  // Title
+    }
+    else if(strcmp(ch, "-a") == 0)
+    {
+        strcpy(tag, "TPE1"); // Artist
+    }
+    else if(strcmp(ch, "-A") == 0)
+    {
+        strcpy(tag, "TALB");// Album
+    }
+    else if(strcmp(ch, "-y") == 0)
+    {
+        strcpy(tag, "TYER");// Year
+    }
+    else if(strcmp(ch, "-cn") == 0)
+    {
+        strcpy(tag, "TCON");// Genre
+    }
+    else if(strcmp(ch, "-cm") == 0)
+    {
+        strcpy(tag, "COMM");// Comment
+    }
+    else
+    {
+        printf("Error: No tag is matched\n");
+        exit(1); // Exit if tag option is invalid
+    }
+}
