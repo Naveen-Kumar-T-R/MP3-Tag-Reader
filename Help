@@ -1,0 +1,18 @@
+/* Name : NAVEEN KUMAR T R
+   Date : 26/09/2025*/
+   
+#include<stdio.h>
+
+//help function definition.
+void help_arg(char **argv)
+{
+    // Print the syntax for viewing in an MP3 file
+    printf("View syntax: \n");
+    printf("\t./a.out -v <file_name.mp3>\n");
+    // Print the syntax for editing in an MP3 file.
+    printf("Edit syntax: \n");
+    printf("\t./a.out -e <file_name.mp3> modifier <new_data>\n");
+    // Print the available modifiers (i.e., tags) and their meanings.
+    printf("Modifiers: \n");
+    printf("\t-t -> Title\n\t-a -> Artist\n\t-A -> Album\n\t-y -> Year\n\t-cn -> Content\n\t-cm -> Gener\n");
+}
